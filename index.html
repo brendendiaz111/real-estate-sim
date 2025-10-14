@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Real Estate Sim (MVP)</title>
+  <link rel="stylesheet" href="./styles/style.css" />
+</head>
+<body class="abs">
+  <aside class="ads">
+    <img src="https://placehold.co/160x160?text=Ad+160x160" width="160" height="160" alt="Ad" />
+    <div class="adcopy">Your ad here • 20k+ views/mo<br/>Contact:<br/>ads@yourdomain.com</div>
+  </aside>
+
+  <main id="game"></main>
+
+  <!-- Phaser -->
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
+
+  <!-- Utils -->
+  <script src="./src/utils/finance.js"></script>
+  <script src="./src/utils/credit.js"></script>
+  <script src="./src/utils/renovation.js"></script>
+  <script src="./src/utils/save.js"></script>
+  <script src="./src/utils/generator.js"></script>
+  <script src="./src/utils/market.js"></script>
+
+  <!-- Scenes -->
+  <script src="./src/scenes/BootScene.js"></script>
+  <script src="./src/scenes/StartScene.js"></script>
+  <script src="./src/scenes/MapScene.js"></script>
+  <script src="./src/scenes/GameScene.js"></script>
+  <script src="./src/scenes/UIScene.js"></script>
+  <script src="./src/scenes/LoseScene.js"></script>
+  <script src="./src/scenes/EndScene.js"></script>
+  <script src="./src/scenes/StatsScene.js"></script>
+
+
+
+  <!-- Entry -->
+  <script src="./src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+Real Estate Game
+
+Backstory:
+You are the founding member-manager of Equity Management, LLC. Your task is to maximize your company's equity (net worth) by investing in real estate. You have 15 years.
+
+You can start off as an: (1) attorney, better rates; (2) handyman, lower expenses and lower renovation cost; or, (3) real estate agent, better buy and sell prices.
+
+Win/Loss Condition:
+-Loss
+--Bankruptcy (cash<-50,000)
+-Win
+--Complete 360 turns &
+--Positive ROI &
+--Positive equity &
+--Beat stock market (ROI>avg. stock market return); OR
+--Achieve REIT status (assets>$500,000,000)
+
+Player Stats:
+Graph of metrics over time
+
+Assumptions:
+-Starting cash: $50,000.
+-Starting financing available: $500,000
+
+Time Horizon:
+-15 years
+-180 turns
+
+Locations:
+--Gentrified (A)
+--Working Class (B)
+--Ghetto (C)
+
+Asset Classes:
+-Residential
+--Mobile Homes
+--Single Family Homes
+--Duplex
+--Triplex
+--Quadruplex
+-Commercial
+--Apartment
+---5 unit
+---10 unit
+---25 unit
+---50 unit
+---100 unit
+
+Property Level Data:
+-Price
+-Location
+-Units
+-Avg Monthly Rent per Unit
+-List of Expenses
+-Monthly NOI
+-Monthly NI
+-Cash Required at Settlement
+
+Actions:
+-Buy
+-Sell
+-Renovate
+-Refinance
+-Pay off mortgage
+
+Metrics:
+-Cash
+-Assets
+-Liabilities
+-Equity
+-Credit Score
+-Avg vacancy rate
+-Avg monthly rent per unit
+-Units
+-Gross rents per month
+-Net operating costs per month
+-Net income per month
+-ROI
+-Stock market return
+
+Notes:
+As Player buys and renovates properties, Player's properties appreciate commensurate with their level of chosen renovation. They will likely need to refinance their renovated properties in order to get more cash to renovate the next property (especially in the beginning). Access to bank financing grows commensurate with their credit score--a credit score of which should be based on their equity (the mathematics behind this have yet to be fleshed out, perhaps a percentage where if equity is less than 10% of assets, then <550 credit score, but if equity is greater than 75%, then 850 credit score, and ranges in between). Player will continue collecting rent, renovating, purchasing, refinancing, and selling property until they trigger a win, or loss, condition. 
+
+Player will have access to a range of graphs that track assets, equity, credit score, cash, ROI, over time.
+
+While the success rate of any business in real life is 5% within 5 years from launch, I'd like to loosely track this percentage in my game. I'd like to make it difficult to get past year 5, such that only 25% of players get past year 5 without going bankrupt. Not sure how I am going to make this happen mechanistically, but it should happen.
+
+The fun should be in analyzing the graphs and tracking your progress over time. Also, it should be fun to upgrade your properties--buying peices of shit and turning them into gold.
+
+Winning via REIT formation should be fucking glorious, as this is akin to taking a stock public.
+
+Winning via the other condition should be mid, but still good.
+
+Losing should feel fucking miserable, but restarting the game should be quick, to get right back into the fun loop.
+
+On renovation: a dollar spent in the ghetto does not increase asset value; for every dollar spent in B, two are added to the asset value; for every dollar spent in C, three are added to the asset value.
+
+The map should have at least 125 different properties available for purchase and at least 20 streets running basically north, south or east, west.
