@@ -17,34 +17,43 @@ class GameScene extends Phaser.Scene {
   }
 
   create() {
-    const w = this.scale.width, h = this.scale.height;
+// === HUD CONTAINER ==================================================
+this.hud = this.add.container(0, 0);
 
-    this.hudCash  = this.add.text(260, 24, this.cashText(),  { font: '20px Arial', fill: '#9bd1ff' }).setDepth(100);
-    this.hudMonth = this.add.text(480, 24, this.monthText(), { font: '20px Arial', fill: '#cfe8ff' }).setDepth(100);
-    this.hudProps = this.add.text(260, 52, this.propsText(), { font: '16px Arial', fill: '#bde0fe' }).setDepth(100);
+// Example: move your existing HUD texts into this.hud.add(...)
+this.cashText = this.add.text(340, 70, 'Cash: $0', { fontSize: '28px', color: '#bfe3ff' });
+this.roleText = this.add.text(640, 70, 'Role: Attorney', { fontSize: '20px', color: '#bfe3ff' });
+this.hud.add([ this.cashText, this.roleText ]);
 
-    const roleLabel = this.state.role ? `Role: ${this.state.role.label}` : 'Role: —';
-    this.hudRole = this.add.text(480, 52, roleLabel, { font:'16px Arial', fill:'#a8e0ff' }).setDepth(100);
+// Hint
+this.hintText = this.add.text(330, this.scale.height - 60, 'Press G or click [Graphs] to view performance', { fontSize: '16px', color: '#9aa4af' });
+this.hud.add(this.hintText);
 
-    this.add.text(w - 220, h - 36, '[ Next Month ▶ ]',
-      { font: '18px Arial', fill: '#cbd5ff' })
-      .setInteractive({ useHandCursor: true })
-      .on('pointerup', () => this.nextMonth())
-      .setDepth(100);
+// === GRAPHS BUTTON ==================================================
+const btn = this.add.text(this.scale.width - 170, this.scale.height - 56, '[ Graphs ]', {
+  fontSize: '20px', color: '#bfe3ff', backgroundColor: '#222a', padding: { x: 10, y: 6 }
+})
+.setInteractive({ useHandCursor: true })
+.on('pointerover', () => btn.setStyle({ color: '#fff' }))
+.on('pointerout', () => btn.setStyle({ color: '#bfe3ff' }))
+.on('pointerup', () => this.toggleStats());
 
-    this.scene.bringToTop();
+this.hud.add(btn);
 
-    // toggle stats scene with 'g' key
-this.input.keyboard.on('keydown-G', () => {
-  if (this.scene.isActive('Stats')) {
-    this.scene.stop('Stats');
-    this.scene.resume('Game');
+// === HOTKEY (G) =====================================================
+this.input.keyboard.on('keydown-G', () => this.toggleStats());
+
+// === TOGGLE HANDLER =================================================
+this.toggleStats = () => {
+  if (this.scene.isActive('StatsScene')) {
+    this.scene.stop('StatsScene');
+    this.hud.setVisible(true);
   } else {
-    this.scene.launch('Stats');
-    this.scene.pause('Game');
+    // pass whatever history/state your StatsScene expects
+    this.scene.launch('StatsScene', { history: this.state?.history || [] });
+    this.hud.setVisible(false);
   }
-});
-
+};
   }
 
   // called by MapScene on [BUY]

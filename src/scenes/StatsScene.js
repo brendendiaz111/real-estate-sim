@@ -103,6 +103,34 @@ class StatsScene extends Phaser.Scene {
     this.input.keyboard.once('keydown-G', ()=>{
       this.scene.stop();
       this.scene.resume('Game');
+
+        // Title (lowered so it never collides even if HUD ever shows)
+    const title = this.add.text(this.scale.width/2, 80, 'Performance Over Time', {
+      fontSize: '28px', color: '#bfe3ff'
+    }).setOrigin(0.5, 0.5);
+
+    // Close hint + button
+    this.add.text(this.scale.width/2, this.scale.height - 48, '[ Press G / ESC to close ]', {
+      fontSize: '16px', color: '#9aa4af'
+    }).setOrigin(0.5, 0.5);
+
+    // Hotkeys to close
+    const close = () => {
+      // tell parent to re-show HUD
+      const parent = this.scene.get(this.sys.settings.data?.parentKey || 'GameScene');
+      if (parent && parent.hud) parent.hud.setVisible(true);
+      this.scene.stop();
+    };
+
+    this.input.keyboard.once('keydown-G', close);
+    this.input.keyboard.once('keydown-ESC', close);
+
+    // OPTIONAL: clickable close
+    const closeBtn = this.add.text(this.scale.width - 120, 24, '[Close]', { fontSize: '18px', color: '#bfe3ff' })
+      .setInteractive({ useHandCursor: true })
+      .on('pointerup', close);
+
+    
     });
   }
 }
