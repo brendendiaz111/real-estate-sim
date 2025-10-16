@@ -9,23 +9,10 @@ class StartScene extends Phaser.Scene {
     const w2 = w/2, h2 = h/2;
     this.add.text(w2, h2 - 80, 'Real Estate Sim', { font: '32px Arial', fill: '#cfe8ff' }).setOrigin(0.5);
 
-    const newBtn = this.add.text(w2, h2 - 10, '[ New Game ]', { font: '24px Arial', fill: '#72ccff' })
-      .setInteractive({useHandCursor:true})
-      .on('pointerup', () => this.showCareerPicker())
-      .setOrigin(0.5);
-
-    const contBtn = this.add.text(w2, h2 + 40, '[ Continue ]', { font: '20px Arial', fill: '#cfcfff' })
-      .setInteractive({useHandCursor:true})
-      .on('pointerup', () => this.startGame({ newGame:false }))
-      .setOrigin(0.5);
-
-    const resetBtn = this.add.text(w2, h2 + 90, '[ Reset Save ]', { font: '18px Arial', fill: '#ff7f7f' })
-      .setInteractive({useHandCursor:true})
-      .on('pointerup', () => {
-        if (window.save?.resetSave) window.save.resetSave();
-        this.add.text(w2, h2 + 130, 'Save cleared.', { font: '14px Arial', fill: '#aaa' }).setOrigin(0.5);
-      })
-      .setOrigin(0.5);
+const newBtn = this.add.text(w2, h2, '[ New Game ]', { font: '24px Arial', fill: '#72ccff' })
+  .setInteractive({useHandCursor:true})
+  .on('pointerup', () => this.showCareerPicker())
+  .setOrigin(0.5);
 
     // sidebar space for ad rail
     this.game.canvas.style.marginLeft = '220px';
@@ -54,13 +41,13 @@ class StartScene extends Phaser.Scene {
       },
     ];
 
-    const box = this.add.rectangle(640, 330, 620, 320, 0x151923, 0.96).setStrokeStyle(2, 0x2e3440);
-    const title = this.add.text(640, 200, 'Choose Your Background', { font:'24px Arial', fill:'#cfe8ff' }).setOrigin(0.5);
+    const box = this.add.rectangle(480, 330, 620, 320, 0x151923, 0.99).setStrokeStyle(2, 0x2e3440);
+    const title = this.add.text(480, 220, 'Choose Your Character', { font:'24px Arial', fill:'#cfe8ff' }).setOrigin(0.5);
 
     const items = [];
     roles.forEach((r, i) => {
-      const y = 250 + i*70;
-      const text = this.add.text(420, y, `[ ${r.label} ] — ${r.desc}`,
+      const y = 255 + i*70;
+      const text = this.add.text(290, y, `[ ${r.label} ] — ${r.desc}`,
         { font:'18px Arial', fill:'#bde0fe' })
         .setInteractive({useHandCursor:true})
         .on('pointerup', () => {
@@ -69,7 +56,7 @@ class StartScene extends Phaser.Scene {
       items.push(text);
     });
 
-    const cancel = this.add.text(640, 430, '[ Cancel ]', { font:'18px Arial', fill:'#ffadad' })
+    const cancel = this.add.text(480, 450, '[ Cancel ]', { font:'18px Arial', fill:'#ffadad' })
       .setOrigin(0.5)
       .setInteractive({useHandCursor:true})
       .on('pointerup', () => this.picker.destroy());

@@ -1,5 +1,0 @@
-[
-  { "price": 60171, "rent": 663, "tax": 1500, "maint": 900, "vacancyPct": 5 },
-  { "price": 120000, "rent": 1300, "tax": 2500, "maint": 1200, "vacancyPct": 6 },
-  { "price": 85000, "rent": 950, "tax": 1800, "maint": 1000, "vacancyPct": 5 }
-]

@@ -1,41 +1,36 @@
-// GameScene.js — HUD + state; applies career modifiers; win/loss checks
+// GameScene.js — HUD + state; no persistence (always fresh run)
 class GameScene extends Phaser.Scene {
   constructor(){ super('Game'); }
 
   init(data) {
-    const saved = (window.save && window.save.loadSave) ? window.save.loadSave() : null;
-
     const fresh = {
       month: 1, cash: 100000, assets: 100000, liabs: 0, equity: 100000,
       equityPct: 1, credit: 700, portfolio: [],
-      role: data?.role || null,        // <-- store role from StartScene
+      role: data?.role || null,
       history: [], flags: { bankrupt:false, reachedHorizon:false }
     };
-
-    // if continuing, keep saved role; if new, use role passed from Start
-    this.state = (data && data.newGame) ? fresh : (saved || fresh);
+    this.state = fresh; // <-- always fresh; no loading
   }
 
   create() {
-    // === HUD CONTAINER ==================================================
-    this.hud = this.add.container(0, 0);
+    // Ensure Map exists and is behind HUD
+    if (!this.scene.isActive('Map')) this.scene.launch('Map');
+    this.scene.sendToBack('Map');
 
-    // HUD texts (names match refreshHUD)
+    // === HUD ==========================================================
+    this.hud = this.add.container(0, 0);
     this.hudCash  = this.add.text(260, 24,  '', { fontSize: '20px', color: '#bfe3ff' });
     this.hudMonth = this.add.text(260, 48,  '', { fontSize: '16px', color: '#bfe3ff' });
     this.hudProps = this.add.text(260, 68,  '', { fontSize: '16px', color: '#bfe3ff' });
     this.hudRole  = this.add.text(640, 24,  'Role: —', { fontSize: '18px', color: '#bfe3ff' });
-
     this.hud.add([ this.hudCash, this.hudMonth, this.hudProps, this.hudRole ]);
 
-    this.hintText = this.add.text(
-      330, this.scale.height - 60,
+    const hint = this.add.text(330, this.scale.height - 60,
       'Press G or click [Graphs] to view performance',
-      { fontSize: '16px', color: '#9aa4af' }
-    );
-    this.hud.add(this.hintText);
+      { fontSize: '16px', color: '#9aa4af' });
+    this.hud.add(hint);
 
-    // === GRAPHS BUTTON ==================================================
+    // === Graphs button & hotkey ======================================
     const graphsBtn = this.add.text(
       this.scale.width - 170, this.scale.height - 56, '[ Graphs ]',
       { fontSize: '20px', color: '#bfe3ff', backgroundColor: '#222a', padding: { x: 10, y: 6 } }
@@ -46,47 +41,104 @@ class GameScene extends Phaser.Scene {
       .on('pointerup',   () => this.toggleStats());
     this.hud.add(graphsBtn);
 
-    // === HOTKEYS ========================================================
     this.input.keyboard.on('keydown-G',   () => this.toggleStats());
-    this.input.keyboard.on('keydown-ESC', () => {  // ESC closes stats if open
+    this.input.keyboard.on('keydown-ESC', () => {
       if (this.scene.isActive('Stats')) {
-        this.scene.stop('Stats');
-        this.hud.setVisible(true);
+        this.scene.stop('Stats'); this.hud.setVisible(true);
       }
     });
 
-    // === TOGGLE HANDLER =================================================
     this.toggleStats = () => {
-      const key = 'Stats'; // scene key registered in StatsScene
+      const key = 'Stats';
+      if (this.scene.isActive(key)) {
+        this.scene.stop(key); this.hud.setVisible(true);
+      } else {
+        this.scene.launch(key, { history: this.state.history });
+        this.hud.setVisible(false);
+      }
+    };
+    // === NEXT MONTH BUTTON ===============================================
+    const nextBtn = this.add.text(
+      this.scale.width - 210, this.scale.height - 28, '[ Next Month ▶ ]',
+      { fontSize: '16px', color: '#c7c7ff' }
+    )
+      .setInteractive({ useHandCursor: true })
+      .on('pointerup', () => this.nextMonth());
+    this.hud.add(nextBtn);
+    // Optional hotkey
+    this.input.keyboard.on('keydown-N', () => this.nextMonth());
+
+    // === HOLDINGS (P) =====================================================
+    this.input.keyboard.on('keydown-P', () => {
+      const key = 'Holdings';
       if (this.scene.isActive(key)) {
         this.scene.stop(key);
         this.hud.setVisible(true);
       } else {
-        this.scene.launch(key, { history: this.state?.history || [] });
+        this.scene.launch(key, { parentKey: 'Game' });
         this.hud.setVisible(false);
       }
-    };
+    });
 
-    // Initial HUD text
+    //small button besides graphs to pop up portfolio
+    const holdBtn = this.add.text(
+      this.scale.width - 320, this.scale.height - 56, '[ Holdings ]',
+      { fontSize: '20px', color: '#bfe3ff', backgroundColor: '#222a', padding: { x:10, y:6 } }
+    ).setInteractive({useHandCursor:true})
+    .on('pointerover', () => holdBtn.setStyle({ color:'#fff' }))
+    .on('pointerout',  () => holdBtn.setStyle({ color:'#bfe3ff' }))
+    .on('pointerup',   () => this.input.keyboard.emit('keydown-P')); // reuse same handler
+    this.hud.add(holdBtn);
+
+    // Stats (G)
+    this.input.keyboard.on('keydown-G', () => {
+      this.scene.isActive('Stats')
+        ? this.closeOverlay('Stats')
+        : this.openOverlay('Stats', { history: this.state.history });
+    });
+
+    // Holdings (P)
+    this.input.keyboard.on('keydown-P', () => {
+      this.scene.isActive('Holdings')
+        ? this.closeOverlay('Holdings')
+        : this.openOverlay('Holdings', { parentKey: 'Game' });
+    });
+
+    // As a safety, re-sync on scene wake
+    this.events.on('wake', () => this.syncHUDVisibility());
+
     this.refreshHUD();
-
-    // Launch the UI overlay with [BUY]/[PASS]/[Next Month ▶]
-    this.scene.launch('UI', { gameRef: this }); // UIScene reads gameRef and wires buttons to nextMonth(), etc. 
   }
+
+openOverlay(key, data){
+  if (!this.scene.isActive(key)) {
+    this.scene.launch(key, data || {});
+    this.hud.setVisible(false);
+  }
+}
+
+closeOverlay(key){
+  if (this.scene.isActive(key)) {
+    this.scene.stop(key);
+    this.hud.setVisible(true);
+  }
+}
+
+// Keep HUD honest if scenes wake/resume
+syncHUDVisibility(){
+  const anyOverlay = this.scene.isActive('Stats') || this.scene.isActive('Holdings');
+  this.hud.setVisible(!anyOverlay);
+}
 
   // called by MapScene on [BUY]
   tryBuy(listing) {
     const mods = this.state.role?.mods || {};
     const buyMult = mods.buyPriceMult || 1;
-    const price = Math.round(listing.price * buyMult); // Agent benefit
+    const price = Math.round(listing.price * buyMult);
 
     const downPct = 0.20;
     const down = Math.round(price * downPct);
-    if (this.state.cash < down) { 
-      this.toast('Not enough cash for 20% down.');
-      this.events.emit('toast', 'Not enough cash for 20% down.');
-      return false; 
-    }
+    if (this.state.cash < down) { this.toast('Not enough cash for 20% down.'); return false; }
 
     const expenseMult = mods.expenseMult || 1;
     const apr = mods.loanAPR || 0.065;
@@ -109,15 +161,23 @@ class GameScene extends Phaser.Scene {
 
     this.state.cash -= down;
     this.state.portfolio.push(prop);
-
-    // UI updates
     this.refreshHUD();
-    this.events.emit('cash:changed', this.state.cash);
-    this.events.emit('portfolio:changed', this.state.portfolio);
-
-    this.save();
     this.checkEndConditions();
     return true;
+  }
+
+  // optional from prior step: sellProperty(index) if you kept Holdings
+  sellProperty(index){
+    const mods = this.state.role?.mods || {};
+    const sellMult = mods.sellPriceMult || 1.0;
+    const p = this.state.portfolio[index];
+    if (!p) return;
+    const gross = Math.round(p.price * 0.95 * sellMult);
+    const net   = Math.max(0, gross - (p.loan || 0));
+    this.state.cash += net;
+    this.state.portfolio.splice(index, 1);
+    this.refreshHUD();
+    this.toast(`Sold: +$${net.toLocaleString()}`);
   }
 
   nextMonth() {
@@ -159,19 +219,11 @@ class GameScene extends Phaser.Scene {
     if (this.state.cash < 50000) this.state.flags.bankrupt = true;
 
     this.state.history.push({
-      m: this.state.month,
-      cash: this.state.cash,
-      equity: this.state.equity,
-      assets: this.state.assets,
-      liabs: this.state.liabs
+      m: this.state.month, cash: this.state.cash, equity: this.state.equity,
+      assets: this.state.assets, liabs: this.state.liabs
     });
 
-    // UI updates
     this.refreshHUD();
-    this.events.emit('cash:changed', this.state.cash);
-    this.events.emit('month:tick', { delta: deltaCash, debt: debtMonthlySum });
-
-    this.save();
     this.checkEndConditions();
   }
 
@@ -206,11 +258,5 @@ class GameScene extends Phaser.Scene {
     const t = this.add.text(260, 80, msg, { font: '16px Arial', fill: '#ffd6a5' }).setDepth(200);
     this.time.delayedCall(1200, () => t.destroy());
   }
-
-  save() {
-    if (window.save?.saveGame) window.save.saveGame(this.state);
-    else localStorage.setItem('resim_save', JSON.stringify(this.state));
-  }
 }
-
 window.GameScene = GameScene;

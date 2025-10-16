@@ -96,3 +96,5 @@ Losing should feel fucking miserable, but restarting the game should be quick, t
 On renovation: a dollar spent in the ghetto does not increase asset value; for every dollar spent in B, two are added to the asset value; for every dollar spent in C, three are added to the asset value.
 
 The map should have at least 125 different properties available for purchase and at least 20 streets running basically north, south or east, west.
+
+To zip codebase: codebase-to-text --input "C:\Users\brend\Desktop\re-sim" --output "C:\Users\brend\Desktop\re-sim\codebase_txt" --output_type "txt"

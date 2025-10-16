@@ -5,8 +5,6 @@ class UIScene extends Phaser.Scene {
 
   create() {
     const w = 960, h = 600;
-    this.cameras.main.setBackgroundColor('#15181d');
-
     const panel = this.add.rectangle(w/2, h/2, 680, 420, 0x1e2229).setStrokeStyle(1, 0x3a4049);
     const cashTxt = this.add.text(panel.x - 300, panel.y - 170, '', { font: '24px Arial', fill: '#6fc2ff' });
     const msgTxt  = this.add.text(panel.x - 300, panel.y - 110, '', { font: '18px Arial', fill: '#ffffff' });

@@ -4,7 +4,9 @@ const config = {
   width: 960,
   height: 600,
   backgroundColor: '#0f1115',
-  scene: [ BootScene, StartScene, MapScene, GameScene, UIScene, LoseScene, EndScene, StatsScene ]
+  // Only include scenes that are DEFINITELY defined on window.*
+  scene: [ StartScene, MapScene, GameScene, StatsScene, HoldingsScene ]
 };
 new Phaser.Game(config);
-//alphalivinglegend
+
+//alphalivinglegend111111111111

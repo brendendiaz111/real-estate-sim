@@ -6,10 +6,8 @@ class StatsScene extends Phaser.Scene {
     const w = this.scale.width, h = this.scale.height;
     this.cameras.main.setBackgroundColor('#0f1115');
 
-    // Pull history passed in (preferred), else fall back to save.
-    const passed = this.sys.settings.data?.history || [];
-    const save   = window.save?.loadSave?.() || {};
-    const hist   = passed.length ? passed : (save.history || []);
+    // Pull history passed in.
+    const hist = this.sys.settings.data?.history || [];
 
     this.add.text(w/2, 40, 'Performance Over Time',
       { font:'24px Arial', fill:'#bde0fe' }).setOrigin(0.5);
