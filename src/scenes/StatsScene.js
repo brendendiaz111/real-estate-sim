@@ -6,8 +6,10 @@ class StatsScene extends Phaser.Scene {
     const w = this.scale.width, h = this.scale.height;
     this.cameras.main.setBackgroundColor('#0f1115');
 
-    const save = window.save?.loadSave?.() || {};
-    const hist = save.history || [];
+    // Pull history passed in (preferred), else fall back to save.
+    const passed = this.sys.settings.data?.history || [];
+    const save   = window.save?.loadSave?.() || {};
+    const hist   = passed.length ? passed : (save.history || []);
 
     this.add.text(w/2, 40, 'Performance Over Time',
       { font:'24px Arial', fill:'#bde0fe' }).setOrigin(0.5);
@@ -16,6 +18,7 @@ class StatsScene extends Phaser.Scene {
     const margin = 80, chartW = w - margin*2, chartH = h - margin*3;
     const x0 = margin, y0 = h - margin;
 
+    // Chart frame
     g.lineStyle(1, 0x5a5f66);
     g.strokeRect(x0, y0 - chartH, chartW, chartH);
 
@@ -28,33 +31,31 @@ class StatsScene extends Phaser.Scene {
       const maxM = hist[hist.length - 1].m ?? hist.length;
       const spanM = Math.max(1, maxM - minM);
 
-      const scaleX = (m) => x0 + ((m - minM) / spanM) * chartW;
-      const scaleY = (val) => y0 - (val / maxY) * chartH;
+      const scaleX = (m)  => x0 + ((m - minM) / spanM) * chartW;
+      const scaleY = (v)  => y0 - (v / maxY) * chartH;
 
-      // Lines
+      // Cash line
       g.lineStyle(2, 0x9bf6a3);
       g.beginPath();
       hist.forEach((pt, i) => {
-        const X = scaleX(pt.m);
-        const Y = scaleY(pt.cash);
-        if (i===0) g.moveTo(X,Y); else g.lineTo(X,Y);
+        const X = scaleX(pt.m), Y = scaleY(pt.cash);
+        i ? g.lineTo(X, Y) : g.moveTo(X, Y);
       });
       g.strokePath();
 
+      // Equity line
       g.lineStyle(2, 0x72ccff);
       g.beginPath();
       hist.forEach((pt, i) => {
-        const X = scaleX(pt.m);
-        const Y = scaleY(pt.equity);
-        if (i===0) g.moveTo(X,Y); else g.lineTo(X,Y);
+        const X = scaleX(pt.m), Y = scaleY(pt.equity);
+        i ? g.lineTo(X, Y) : g.moveTo(X, Y);
       });
       g.strokePath();
 
       // Legend
-      this.add.text(x0, y0 - chartH - 24, 'Cash (green) / Equity (blue)', 
-        { font:'14px Arial', fill:'#bde0fe' });
+      this.add.text(x0, y0 - chartH - 24, 'Cash (green) / Equity (blue)', { font:'14px Arial', fill:'#bde0fe' });
 
-      // --- X-axis ticks (months) ---
+      // X-axis ticks
       let step;
       if (spanM <= 24) step = 6;
       else if (spanM <= 60) step = 12;
@@ -64,74 +65,41 @@ class StatsScene extends Phaser.Scene {
       g.lineStyle(1, 0x3a4048, 1);
       for (let m = Math.ceil(minM/step)*step; m <= maxM; m += step) {
         const X = scaleX(m);
-        g.beginPath();
-        g.moveTo(X, y0);
-        g.lineTo(X, y0 + 6);
-        g.strokePath();
-        this.add.text(X, y0 + 10, `${m}`, { font:'12px Arial', fill:'#9aa3ad' })
-          .setOrigin(0.5, 0);
+        g.beginPath(); g.moveTo(X, y0); g.lineTo(X, y0 + 6); g.strokePath();
+        this.add.text(X, y0 + 10, `${m}`, { font:'12px Arial', fill:'#9aa3ad' }).setOrigin(0.5, 0);
       }
-      this.add.text(x0 + chartW/2, y0 + 28, 'Month (Turns)',
-        { font:'12px Arial', fill:'#9aa3ad' }).setOrigin(0.5, 0);
+      this.add.text(x0 + chartW/2, y0 + 28, 'Month (Turns)', { font:'12px Arial', fill:'#9aa3ad' }).setOrigin(0.5, 0);
 
-      // --- Y-axis ticks (money) ---
+      // Y-axis ticks
       const yTicks = 5;
       for (let i = 0; i <= yTicks; i++) {
         const val = (maxY / yTicks) * i;
         const Y = scaleY(val);
         g.lineStyle(1, 0x3a4048, 1);
-        g.beginPath();
-        g.moveTo(x0 - 6, Y);
-        g.lineTo(x0, Y);
-        g.strokePath();
-        this.add.text(x0 - 10, Y, `$${Math.round(val/1000)}k`, 
-          { font:'12px Arial', fill:'#9aa3ad' }).setOrigin(1, 0.5);
+        g.beginPath(); g.moveTo(x0 - 6, Y); g.lineTo(x0, Y); g.strokePath();
+        this.add.text(x0 - 10, Y, `$${Math.round(val/1000)}k`, { font:'12px Arial', fill:'#9aa3ad' }).setOrigin(1, 0.5);
       }
-      this.add.text(x0 - 40, y0 - chartH/2, 'Value ($)', 
-        { font:'12px Arial', fill:'#9aa3ad' })
-        .setOrigin(0.5, 0.5)
-        .setAngle(-90);
+      this.add.text(x0 - 40, y0 - chartH/2, 'Value ($)', { font:'12px Arial', fill:'#9aa3ad' })
+        .setOrigin(0.5).setAngle(-90);
     } else {
-      this.add.text(w/2, h/2, 'Not enough data yet.',
-        { font:'18px Arial', fill:'#bde0fe' }).setOrigin(0.5);
+      this.add.text(w/2, h/2, 'Not enough data yet.', { font:'18px Arial', fill:'#bde0fe' }).setOrigin(0.5);
     }
 
-    // Close instructions
-    this.add.text(w/2, h - 40, '[ Press G to Close ]',
-      { font:'16px Arial', fill:'#aaa' }).setOrigin(0.5);
+    // Close UX
+    this.add.text(w/2, h - 40, '[ Press G or ESC to Close ]', { font:'16px Arial', fill:'#aaa' }).setOrigin(0.5);
 
-    this.input.keyboard.once('keydown-G', ()=>{
-      this.scene.stop();
-      this.scene.resume('Game');
-
-        // Title (lowered so it never collides even if HUD ever shows)
-    const title = this.add.text(this.scale.width/2, 80, 'Performance Over Time', {
-      fontSize: '28px', color: '#bfe3ff'
-    }).setOrigin(0.5, 0.5);
-
-    // Close hint + button
-    this.add.text(this.scale.width/2, this.scale.height - 48, '[ Press G / ESC to close ]', {
-      fontSize: '16px', color: '#9aa4af'
-    }).setOrigin(0.5, 0.5);
-
-    // Hotkeys to close
     const close = () => {
-      // tell parent to re-show HUD
-      const parent = this.scene.get(this.sys.settings.data?.parentKey || 'GameScene');
-      if (parent && parent.hud) parent.hud.setVisible(true);
-      this.scene.stop();
+      this.scene.stop(); // stop this overlay
+      const game = this.scene.get('Game');
+      if (game?.hud) game.hud.setVisible(true); // re-show HUD
     };
 
-    this.input.keyboard.once('keydown-G', close);
-    this.input.keyboard.once('keydown-ESC', close);
-
-    // OPTIONAL: clickable close
-    const closeBtn = this.add.text(this.scale.width - 120, 24, '[Close]', { fontSize: '18px', color: '#bfe3ff' })
-      .setInteractive({ useHandCursor: true })
+    // Hotkeys & button
+    this.input.keyboard.on('keydown-G', close);
+    this.input.keyboard.on('keydown-ESC', close);
+    this.add.text(w - 120, 20, '[Close]', { font:'18px Arial', fill:'#bde0fe' })
+      .setInteractive({useHandCursor:true})
       .on('pointerup', close);
-
-    
-    });
   }
 }
 window.StatsScene = StatsScene;

@@ -8,7 +8,7 @@ class GameScene extends Phaser.Scene {
     const fresh = {
       month: 1, cash: 100000, assets: 100000, liabs: 0, equity: 100000,
       equityPct: 1, credit: 700, portfolio: [],
-      role: data?.role || null,        // <-- store role
+      role: data?.role || null,        // <-- store role from StartScene
       history: [], flags: { bankrupt:false, reachedHorizon:false }
     };
 
@@ -17,43 +17,61 @@ class GameScene extends Phaser.Scene {
   }
 
   create() {
-// === HUD CONTAINER ==================================================
-this.hud = this.add.container(0, 0);
+    // === HUD CONTAINER ==================================================
+    this.hud = this.add.container(0, 0);
 
-// Example: move your existing HUD texts into this.hud.add(...)
-this.cashText = this.add.text(340, 70, 'Cash: $0', { fontSize: '28px', color: '#bfe3ff' });
-this.roleText = this.add.text(640, 70, 'Role: Attorney', { fontSize: '20px', color: '#bfe3ff' });
-this.hud.add([ this.cashText, this.roleText ]);
+    // HUD texts (names match refreshHUD)
+    this.hudCash  = this.add.text(260, 24,  '', { fontSize: '20px', color: '#bfe3ff' });
+    this.hudMonth = this.add.text(260, 48,  '', { fontSize: '16px', color: '#bfe3ff' });
+    this.hudProps = this.add.text(260, 68,  '', { fontSize: '16px', color: '#bfe3ff' });
+    this.hudRole  = this.add.text(640, 24,  'Role: —', { fontSize: '18px', color: '#bfe3ff' });
 
-// Hint
-this.hintText = this.add.text(330, this.scale.height - 60, 'Press G or click [Graphs] to view performance', { fontSize: '16px', color: '#9aa4af' });
-this.hud.add(this.hintText);
+    this.hud.add([ this.hudCash, this.hudMonth, this.hudProps, this.hudRole ]);
 
-// === GRAPHS BUTTON ==================================================
-const btn = this.add.text(this.scale.width - 170, this.scale.height - 56, '[ Graphs ]', {
-  fontSize: '20px', color: '#bfe3ff', backgroundColor: '#222a', padding: { x: 10, y: 6 }
-})
-.setInteractive({ useHandCursor: true })
-.on('pointerover', () => btn.setStyle({ color: '#fff' }))
-.on('pointerout', () => btn.setStyle({ color: '#bfe3ff' }))
-.on('pointerup', () => this.toggleStats());
+    this.hintText = this.add.text(
+      330, this.scale.height - 60,
+      'Press G or click [Graphs] to view performance',
+      { fontSize: '16px', color: '#9aa4af' }
+    );
+    this.hud.add(this.hintText);
 
-this.hud.add(btn);
+    // === GRAPHS BUTTON ==================================================
+    const graphsBtn = this.add.text(
+      this.scale.width - 170, this.scale.height - 56, '[ Graphs ]',
+      { fontSize: '20px', color: '#bfe3ff', backgroundColor: '#222a', padding: { x: 10, y: 6 } }
+    )
+      .setInteractive({ useHandCursor: true })
+      .on('pointerover', () => graphsBtn.setStyle({ color: '#fff' }))
+      .on('pointerout',  () => graphsBtn.setStyle({ color: '#bfe3ff' }))
+      .on('pointerup',   () => this.toggleStats());
+    this.hud.add(graphsBtn);
 
-// === HOTKEY (G) =====================================================
-this.input.keyboard.on('keydown-G', () => this.toggleStats());
+    // === HOTKEYS ========================================================
+    this.input.keyboard.on('keydown-G',   () => this.toggleStats());
+    this.input.keyboard.on('keydown-ESC', () => {  // ESC closes stats if open
+      if (this.scene.isActive('Stats')) {
+        this.scene.stop('Stats');
+        this.hud.setVisible(true);
+      }
+    });
 
-// === TOGGLE HANDLER =================================================
-this.toggleStats = () => {
-  if (this.scene.isActive('StatsScene')) {
-    this.scene.stop('StatsScene');
-    this.hud.setVisible(true);
-  } else {
-    // pass whatever history/state your StatsScene expects
-    this.scene.launch('StatsScene', { history: this.state?.history || [] });
-    this.hud.setVisible(false);
-  }
-};
+    // === TOGGLE HANDLER =================================================
+    this.toggleStats = () => {
+      const key = 'Stats'; // scene key registered in StatsScene
+      if (this.scene.isActive(key)) {
+        this.scene.stop(key);
+        this.hud.setVisible(true);
+      } else {
+        this.scene.launch(key, { history: this.state?.history || [] });
+        this.hud.setVisible(false);
+      }
+    };
+
+    // Initial HUD text
+    this.refreshHUD();
+
+    // Launch the UI overlay with [BUY]/[PASS]/[Next Month ▶]
+    this.scene.launch('UI', { gameRef: this }); // UIScene reads gameRef and wires buttons to nextMonth(), etc. 
   }
 
   // called by MapScene on [BUY]
@@ -64,7 +82,11 @@ this.toggleStats = () => {
 
     const downPct = 0.20;
     const down = Math.round(price * downPct);
-    if (this.state.cash < down) { this.toast('Not enough cash for 20% down.'); return false; }
+    if (this.state.cash < down) { 
+      this.toast('Not enough cash for 20% down.');
+      this.events.emit('toast', 'Not enough cash for 20% down.');
+      return false; 
+    }
 
     const expenseMult = mods.expenseMult || 1;
     const apr = mods.loanAPR || 0.065;
@@ -87,18 +109,22 @@ this.toggleStats = () => {
 
     this.state.cash -= down;
     this.state.portfolio.push(prop);
+
+    // UI updates
     this.refreshHUD();
+    this.events.emit('cash:changed', this.state.cash);
+    this.events.emit('portfolio:changed', this.state.portfolio);
+
     this.save();
     this.checkEndConditions();
     return true;
   }
 
   nextMonth() {
-    const finance = window.finance || {};
     const market  = window.market  || { appreciationRate: () => 0, vacancyRate: () => 0.06 };
     const credit  = window.credit  || { creditFromEquityPct: () => 650 };
 
-    let deltaCash = 0, totalAssets = 0, totalDebt = 0;
+    let deltaCash = 0, totalAssets = 0, totalDebt = 0, debtMonthlySum = 0;
     this.state.month++;
 
     this.state.portfolio.forEach(p => {
@@ -117,6 +143,7 @@ this.toggleStats = () => {
 
       p.lastMonthlyNI = Math.round((result?.monthlyNI ?? 0));
       deltaCash += p.lastMonthlyNI;
+      debtMonthlySum += (result?.debtAnn ?? 0) / 12;
       totalAssets += p.price;
       totalDebt   += p.loan;
     });
@@ -131,9 +158,19 @@ this.toggleStats = () => {
     if (this.state.month >= 180) this.state.flags.reachedHorizon = true;
     if (this.state.cash < 50000) this.state.flags.bankrupt = true;
 
-    this.state.history.push({ m:this.state.month, cash:this.state.cash, equity:this.state.equity, assets:this.state.assets, liabs:this.state.liabs });
+    this.state.history.push({
+      m: this.state.month,
+      cash: this.state.cash,
+      equity: this.state.equity,
+      assets: this.state.assets,
+      liabs: this.state.liabs
+    });
 
+    // UI updates
     this.refreshHUD();
+    this.events.emit('cash:changed', this.state.cash);
+    this.events.emit('month:tick', { delta: deltaCash, debt: debtMonthlySum });
+
     this.save();
     this.checkEndConditions();
   }
