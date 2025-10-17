@@ -30,33 +30,6 @@ class GameScene extends Phaser.Scene {
       { fontSize: '16px', color: '#9aa4af' });
     this.hud.add(hint);
 
-    // === Graphs button & hotkey ======================================
-    const graphsBtn = this.add.text(
-      this.scale.width - 170, this.scale.height - 56, '[ Graphs ]',
-      { fontSize: '20px', color: '#bfe3ff', backgroundColor: '#222a', padding: { x: 10, y: 6 } }
-    )
-      .setInteractive({ useHandCursor: true })
-      .on('pointerover', () => graphsBtn.setStyle({ color: '#fff' }))
-      .on('pointerout',  () => graphsBtn.setStyle({ color: '#bfe3ff' }))
-      .on('pointerup',   () => this.toggleStats());
-    this.hud.add(graphsBtn);
-
-    this.input.keyboard.on('keydown-G',   () => this.toggleStats());
-    this.input.keyboard.on('keydown-ESC', () => {
-      if (this.scene.isActive('Stats')) {
-        this.scene.stop('Stats'); this.hud.setVisible(true);
-      }
-    });
-
-    this.toggleStats = () => {
-      const key = 'Stats';
-      if (this.scene.isActive(key)) {
-        this.scene.stop(key); this.hud.setVisible(true);
-      } else {
-        this.scene.launch(key, { history: this.state.history });
-        this.hud.setVisible(false);
-      }
-    };
     // === NEXT MONTH BUTTON ===============================================
     const nextBtn = this.add.text(
       this.scale.width - 210, this.scale.height - 28, '[ Next Month ▶ ]',
@@ -67,18 +40,6 @@ class GameScene extends Phaser.Scene {
     this.hud.add(nextBtn);
     // Optional hotkey
     this.input.keyboard.on('keydown-N', () => this.nextMonth());
-
-    // === HOLDINGS (P) =====================================================
-    this.input.keyboard.on('keydown-P', () => {
-      const key = 'Holdings';
-      if (this.scene.isActive(key)) {
-        this.scene.stop(key);
-        this.hud.setVisible(true);
-      } else {
-        this.scene.launch(key, { parentKey: 'Game' });
-        this.hud.setVisible(false);
-      }
-    });
 
     //small button besides graphs to pop up portfolio
     const holdBtn = this.add.text(
@@ -106,6 +67,15 @@ class GameScene extends Phaser.Scene {
 
     // As a safety, re-sync on scene wake
     this.events.on('wake', () => this.syncHUDVisibility());
+
+    // GameScene.create()
+    const roleKey = this.registry.get('role') || 'Attorney';
+    this.roles = this.roles || {
+      Attorney: { label:'Attorney', mods:{ buyPriceMult:0.95, expenseMult:1.00, loanAPR:0.055 } },
+      Handyman: { label:'Handyman', mods:{ buyPriceMult:1.00, expenseMult:0.90, loanAPR:0.062 } },
+      Agent:    { label:'Real Estate Agent', mods:{ buyPriceMult:0.97, expenseMult:1.00, loanAPR:0.060 } },
+    };
+    this.state.role = this.roles[roleKey];
 
     this.refreshHUD();
   }

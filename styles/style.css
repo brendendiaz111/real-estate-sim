@@ -1,5 +1,5 @@
 html, body { margin:0; height:100%; background:#0f1115; color:#fff; font-family: Arial, Helvetica, sans-serif; }
-#game { display:flex; min-height:100vh; align-items:center; justify-content:center; }
+#game { display:block; margin-left:200px; } /* same width as .ads */
 .ads { position:fixed; left:0; top:0; bottom:0; width:200px; border-right:1px solid #2a2e35; padding:16px; box-sizing:border-box; }
 .adcopy { margin-top:12px; font-size:12px; opacity:.7; }
 canvas { outline: none; }
