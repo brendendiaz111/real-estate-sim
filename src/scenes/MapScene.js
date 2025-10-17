@@ -61,8 +61,8 @@ class MapScene extends Phaser.Scene {
 
         // value/rent tables
         const pricePU = { A: 220000, B: 150000, C: 90000 }[locClass];
-        const rentPU  = { A:   2100, B:   1500, C:   950 }[locClass];
-        const expRate = { A:   0.35, B:   0.40, C:  0.45 }[locClass];
+        const rentPU  = { A: 2100, B: 1500, C: 950 }[locClass];
+        const expRate = { A: 0.35, B: 0.40, C: 0.45 }[locClass];
 
         const price = pricePU * units;
         const rentPerUnit = rentPU;
@@ -70,14 +70,16 @@ class MapScene extends Phaser.Scene {
         const expenses = Math.round(gross * expRate);
         const noi = gross - expenses;
 
-        const listing = { id, locClass, type, units, price, rentPerUnit, gross, expenses, noi, cashNeeded: Math.round(price*0.20) };
+        const listing = { id, locClass, type, units, price, rentPerUnit, gross, expenses, noi, cashNeeded: Math.round(price * 0.20) };
         this.catalog[id] = listing;
 
         const fill = (locClass === 'A') ? 0xa0ffc8 : (locClass === 'B') ? 0xfff3a0 : 0xffb0b0;
         const dot = this.add.circle(x, y, 8, fill).setStrokeStyle(2, 0x3a78a5).setInteractive({ useHandCursor: true });
-        dot.on('pointerup', () => this.openListing(id));
-        this.dots[id] = dot;
+        const dotId = id;                                  // capture current id
+        dot.on('pointerup', () => this.openListing(dotId)); // use captured id
+        this.dots[dotId] = dot;
         id++;
+
       }
     }
 
@@ -98,48 +100,15 @@ class MapScene extends Phaser.Scene {
     }
   }
 
-  // small listing overlay (BUY/PASS)
+  // On click, launch the dedicated modal overlay
   openListing(id){
     const base = this.catalog[id];
-    const game = this.scene.get('Game');
-    const mods = game?.state?.role?.mods || {};
-    const yourPrice = Math.round(base.price * (mods.buyPriceMult || 1));
-
-    if (this.panel) this.panel.destroy();
-
-    const box = this.add.rectangle(this.scale.width/2 + 160, this.scale.height/2 + 30, 600, 340, 0x13161c, 0.96)
-      .setStrokeStyle(2, 0x2e3440);
-    const t = this.add.text(box.x - 220, box.y - 100,
-      `${base.type} (${base.locClass}) • ${base.units} units\n` +
-      `List Price: $${base.price.toLocaleString()}\n` +
-      `Your Price: $${yourPrice.toLocaleString()}\n` +
-      `Rent/Unit: $${base.rentPerUnit}/mo   NOI: $${base.noi}/mo`,
-      { font: '18px Arial', fill: '#dbeafe', lineSpacing: 8 });
-
-    const buy = this.add.text(box.x - 140, box.y + 90, '[ BUY ]', { font: '18px Arial', fill: '#9bf6a3' })
-      .setInteractive({ useHandCursor: true })
-      .on('pointerup', () => {
-        const ok = game && game.tryBuy ? game.tryBuy(base) : false;
-        if (ok) {
-          const dot = this.dots[id];
-          if (dot) { dot.setStrokeStyle(2, 0x72ccff).setScale(1.2); }
-          this.closePanel();
-        }
-      });
-
-    const pass = this.add.text(box.x - 40, box.y + 90, '[ PASS ]', { font: '18px Arial', fill: '#ffadad' })
-      .setInteractive({ useHandCursor: true })
-      .on('pointerup', () => this.closePanel());
-
-    this.panel = this.add.container(0, 0, [box, t, buy, pass]).setDepth(5);
-
-    if (game?.hud) game.hud.setVisible(false);
-  }
-
-  closePanel(){
-    if (this.panel) { this.panel.destroy(); this.panel = null; }
-    const game = this.scene.get('Game');
-    if (game?.hud) game.hud.setVisible(true);
+    this.scene.launch('Listing', {
+      parentKey: 'Game',
+      mapKey: 'Map',
+      listing: base,
+      dotId: id
+    });
   }
 }
 

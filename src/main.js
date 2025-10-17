@@ -13,7 +13,7 @@ const config = {
   width: w,
   height: h,
   backgroundColor: '#0f1115',
-  scene: [ StartScene, MapScene, GameScene, StatsScene, HoldingsScene ]
+  scene: [ StartScene, MapScene, GameScene, ListingScene, StatsScene, HoldingsScene ]
 };
 
 const game = new Phaser.Game(config);

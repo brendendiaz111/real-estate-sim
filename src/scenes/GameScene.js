@@ -77,6 +77,8 @@ class GameScene extends Phaser.Scene {
     };
     this.state.role = this.roles[roleKey];
 
+    this.state.projects = this.state.projects || [];  // active + completed (archived) projects
+
     this.refreshHUD();
   }
 
@@ -151,6 +153,25 @@ syncHUDVisibility(){
   }
 
   nextMonth() {
+        // === Renovation phase =========================================
+    const p = this.state.projects || [];
+    // Withdraw this month’s renovation cash (reduces cash-on-hand)
+    const renoDraw = window.renovation.tick(p);
+    this.state.cash -= renoDraw;
+
+    // After other monthly updates (or here), apply completed projects
+    const applied = window.renovation.applyGains(
+      p,
+      // quick lookup: your holdings are in this.state.portfolio or catalog lookup
+      Object.fromEntries(this.state.portfolio.map(prop => [prop.id, prop]))
+    );
+
+    // Optional: surface a toast if something finished
+    if (applied.length){
+      const totalVG = applied.reduce((s,a)=>s+a.valueGain,0).toLocaleString();
+      this.hud?.setStatus?.(`Renovations complete: +$${totalVG} value; rents increased.`);
+    }
+    
     const market  = window.market  || { appreciationRate: () => 0, vacancyRate: () => 0.06 };
     const credit  = window.credit  || { creditFromEquityPct: () => 650 };
 

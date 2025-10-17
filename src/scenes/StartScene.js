@@ -23,8 +23,6 @@ class StartScene extends Phaser.Scene {
     this.registry.set('role', roleKey);
     if (!this.scene.isActive('Game'))      this.scene.launch('Game');
     if (!this.scene.isActive('Map'))       this.scene.launch('Map');
-    if (!this.scene.isActive('Stats'))     this.scene.launch('Stats');
-    if (!this.scene.isActive('Holdings'))  this.scene.launch('Holdings');
     this.scene.bringToTop('Game');
     this.closePicker();
     this.scene.stop();

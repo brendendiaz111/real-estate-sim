@@ -29,6 +29,28 @@ class HoldingsScene extends Phaser.Scene {
         const line = `${String(i+1).padStart(2,' ')}   ${String(p.units).padStart(3,' ')}   ${p.location.padEnd(3,' ')}   $${p.price.toLocaleString().padStart(10,' ')}   $${(p.loan||0).toLocaleString().padStart(10,' ')}   $${(p.lastMonthlyNI||0).toLocaleString()}`;
         this.add.text(300, y, line, { font:'14px Arial', fill:'#dbeafe' }).setOrigin(0,0.5);
 
+      const renoBtn = this.add.text(x + 60, y, '[ Renovate ]',
+      { font:'16px Arial', fill:'#a5f3fc' })
+      .setInteractive({ useHandCursor:true })
+      .on('pointerup', () => {
+        const scope = prompt('Scope? cosmetic | moderate | heavy', 'cosmetic') || 'cosmetic';
+        const budget = Math.max(0, parseInt(prompt('Budget $ (whole dollars):', '20000')||'0',10));
+        if (!budget) return;
+
+        const game = this.scene.get('Game');
+        const project = window.renovation.plan({
+          propertyId: row.property.id,
+          locClass: row.property.locClass,
+          units: row.property.units,
+          budget, scope
+        });
+
+    game.state.projects.push(project);
+    game.state.cash -= Math.min(1000, budget*0.1); // small deposit now (optional)
+    game.hud?.setStatus?.(`Started ${scope} renovation on #${row.property.id} — budget $${budget.toLocaleString()}.`);
+  });
+
+
         const sell = this.add.text(860, y, '[ Sell ]', { font:'14px Arial', fill:'#ffadad' })
           .setOrigin(1,0.5).setInteractive({useHandCursor:true})
           .on('pointerup', () => {
